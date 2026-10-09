@@ -1,119 +1,104 @@
 import React, { useState } from 'react';
-import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-// Importações dos arquivos criados na pasta src/
-import { EVENTOS_INICIAIS } from './src/data/eventosData';
+// Importação correta de todas as telas
 import TelaOnboarding from './src/screens/TelaOnboarding';
 import TelaLogin from './src/screens/TelaLogin';
+import TelaRecuperarSenha from './src/screens/TelaRecuperarSenha';
 import TelaCadastroUsuario from './src/screens/TelaCadastroUsuario';
 import TelaEventos from './src/screens/TelaEventos';
 import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
-import TelaCadastro from './src/screens/TelaCadastro';
-
-const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [etapaFluxo, setEtapaFluxo] = useState('onboarding');
-  const [listaEventos, setListaEventos] = useState(EVENTOS_INICIAIS);
+  const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
 
-  const renderConteudo = () => {
-    if (etapaFluxo === 'onboarding') {
-      return <TelaOnboarding aoContinuar={() => setEtapaFluxo('login')} />;
-    }
+  const listaEventos = [
+    {
+      id: '1',
+      titulo: 'Python Brasil [Conference]',
+      formato: 'Presencial',
+      cidade: 'Salvador, BA',
+      tech: 'Python / Backend',
+      preco: 'R$ 50,00',
+      nota: 4.8,
+      localExato: 'Centro de Convenções de Salvador',
+      descricao: 'O maior evento de Python do país reunindo especialistas e entusiastas para palestras e networking.',
+      imagem: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=600',
+    },
+    {
+      id: '2',
+      titulo: 'IA Generativa na Prática',
+      formato: 'Online',
+      cidade: 'Remoto',
+      tech: 'Inteligência Artificial',
+      preco: 'Gratuito',
+      nota: 4.9,
+      localExato: 'Transmissão ao vivo via YouTube',
+      descricao: 'Aprenda a aplicar modelos de linguagem e IA generativa em projetos reais do dia a dia.',
+      imagem: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
+    },
+  ];
 
-    if (etapaFluxo === 'login') {
-      return (
+  if (telaAtual === 'Onboarding') {
+    return (
+      <SafeAreaProvider>
+        <TelaOnboarding aoContinuar={() => setTelaAtual('Login')} />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'Login') {
+    return (
+      <SafeAreaProvider>
         <TelaLogin 
-          aoEntrar={() => setEtapaFluxo('app')} 
-          irParaCadastro={() => setEtapaFluxo('cadastro')} 
+          aoEntrar={() => setTelaAtual('Feed')} 
+          irParaCadastro={() => setTelaAtual('Cadastro')} 
+          irParaRecuperarSenha={() => setTelaAtual('RecuperarSenha')} 
         />
-      );
-    }
+      </SafeAreaProvider>
+    );
+  }
 
-    if (etapaFluxo === 'cadastro') {
-      return (
+  if (telaAtual === 'RecuperarSenha') {
+    return (
+      <SafeAreaProvider>
+        <TelaRecuperarSenha aoVoltar={() => setTelaAtual('Login')} />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'Cadastro') {
+    return (
+      <SafeAreaProvider>
         <TelaCadastroUsuario 
-          aoCadastrar={() => setEtapaFluxo('app')} 
-          irParaLogin={() => setEtapaFluxo('login')} 
+          aoVoltar={() => setTelaAtual('Login')} 
+          aoCadastrar={() => setTelaAtual('Feed')} 
         />
-      );
-    }
+      </SafeAreaProvider>
+    );
+  }
 
-    if (eventoSelecionado) {
-      return (
+  if (telaAtual === 'Detalhes' && eventoSelecionado) {
+    return (
+      <SafeAreaProvider>
         <TelaDetalhesEvento 
           evento={eventoSelecionado} 
-          aoVoltar={() => setEventoSelecionado(null)} 
+          aoVoltar={() => setTelaAtual('Feed')} 
         />
-      );
-    }
-
-    return (
-      <NavigationContainer>
-        <Tab.Navigator 
-          screenOptions={{ 
-            headerShown: false,
-            tabBarStyle: {
-              backgroundColor: '#121824',
-              borderTopColor: '#1E293B',
-              height: 60,
-              paddingBottom: 8,
-              paddingTop: 8,
-            },
-            tabBarActiveTintColor: '#0066FF',
-            tabBarInactiveTintColor: '#8F9CAE',
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontWeight: '600',
-            }
-          }}
-        >
-          <Tab.Screen 
-            name="Eventos"
-            options={{
-              tabBarLabel: 'Eventos',
-              tabBarIcon: ({ color }) => (
-                <Text style={{ fontSize: 18, color }}>🏠</Text>
-              )
-            }}
-          >
-            {(props) => (
-              <TelaEventos 
-                {...props} 
-                eventos={listaEventos} 
-                aoSelecionarEvento={(evento) => setEventoSelecionado(evento)}
-              />
-            )}
-          </Tab.Screen>
-
-          <Tab.Screen 
-            name="Novo Evento"
-            options={{
-              tabBarLabel: 'Novo Evento',
-              tabBarIcon: ({ color }) => (
-                <Text style={{ fontSize: 18, color }}>➕</Text>
-              )
-            }}
-          >
-            {(props) => (
-              <TelaCadastro 
-                {...props} 
-                adicionarEvento={(novo) => setListaEventos([novo, ...listaEventos])} 
-              />
-            )}
-          </Tab.Screen>
-        </Tab.Navigator>
-      </NavigationContainer>
+      </SafeAreaProvider>
     );
-  };
+  }
 
   return (
     <SafeAreaProvider>
-      {renderConteudo()}
+      <TelaEventos 
+        eventos={listaEventos} 
+        aoSelecionarEvento={(evento) => {
+          setEventoSelecionado(evento);
+          setTelaAtual('Detalhes');
+        }} 
+      />
     </SafeAreaProvider>
   );
 }

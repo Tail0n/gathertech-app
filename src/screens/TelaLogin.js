@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function TelaLogin({ aoEntrar, irParaCadastro }) {
+export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSenha }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
@@ -12,10 +12,6 @@ export default function TelaLogin({ aoEntrar, irParaCadastro }) {
       return;
     }
     aoEntrar();
-  };
-
-  const handleEsqueciSenha = () => {
-    Alert.alert('Recuperar Senha', 'Enviaremos um e-mail com as instruções para redefinir a sua senha.');
   };
 
   return (
@@ -56,7 +52,7 @@ export default function TelaLogin({ aoEntrar, irParaCadastro }) {
             onChangeText={setSenha}
           />
 
-          <TouchableOpacity style={styles.btnEsqueciSenha} onPress={handleEsqueciSenha}>
+          <TouchableOpacity style={styles.btnEsqueciSenha} onPress={irParaRecuperarSenha}>
             <Text style={styles.textoEsqueciSenha}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
@@ -65,9 +61,15 @@ export default function TelaLogin({ aoEntrar, irParaCadastro }) {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity onPress={irParaCadastro} style={styles.linkCadastro}>
+          <Text style={styles.textoLink}>
+            Ainda não tem uma conta? <Text style={styles.textDestaque}>Cadastre-se</Text>
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ou continuar com</Text>
+          <Text style={styles.dividerText}>ou continue com</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -76,22 +78,24 @@ export default function TelaLogin({ aoEntrar, irParaCadastro }) {
             style={styles.btnSocial} 
             onPress={() => Alert.alert('Google', 'Login via Google em breve!')}
           >
-            <Text style={styles.textoSocial}>🌐 Google</Text>
+            <Image 
+              source={{ uri: 'https://img.icons8.com/color/48/google-logo.png' }} 
+              style={styles.iconeSocial} 
+            />
+            <Text style={styles.textoSocial}>Google</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.btnSocial} 
             onPress={() => Alert.alert('Apple', 'Login via Apple ID em breve!')}
           >
-            <Text style={styles.textoSocial}>🍎 Apple</Text>
+            <Image 
+              source={{ uri: 'https://img.icons8.com/ios-filled/50/ffffff/mac-os.png' }} 
+              style={styles.iconeSocial} 
+            />
+            <Text style={styles.textoSocial}>Apple</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity onPress={irParaCadastro} style={styles.linkCadastro}>
-          <Text style={styles.textoLink}>
-            Ainda não tem conta? <Text style={styles.textDestaque}>Cadastre-se</Text>
-          </Text>
-        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -110,13 +114,28 @@ const styles = StyleSheet.create({
   inputAuth: { backgroundColor: '#121824', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#1E293B', color: '#FFFFFF', fontSize: 15 },
   btnEsqueciSenha: { alignSelf: 'flex-end', marginTop: 10, marginBottom: 24 },
   textoEsqueciSenha: { color: '#7C3AED', fontSize: 13, fontWeight: '600' },
-  btnPrimarioAuth: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  btnPrimarioAuth: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 20 },
   textoBtnPrimario: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
   dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#1E293B' },
   dividerText: { color: '#8F9CAE', paddingHorizontal: 12, fontSize: 12 },
   socialButtonsContainer: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  btnSocial: { flex: 1, backgroundColor: '#121824', borderWidth: 1, borderColor: '#1E293B', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
+  btnSocial: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    backgroundColor: '#121824', 
+    borderWidth: 1, 
+    borderColor: '#1E293B', 
+    paddingVertical: 14, 
+    borderRadius: 10, 
+    alignItems: 'center' 
+  },
+  iconeSocial: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
   textoSocial: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
   linkCadastro: { alignItems: 'center' },
   textoLink: { color: '#8F9CAE', fontSize: 14 },
