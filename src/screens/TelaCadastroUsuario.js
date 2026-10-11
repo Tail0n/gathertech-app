@@ -1,61 +1,56 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Image } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function TelaCadastroUsuario({ aoCadastrar, irParaLogin }) {
+export default function TelaCadastroUsuario({ aoVoltar, aoCadastrar }) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
+  const [nascimento, setNascimento] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [documento, setDocumento] = useState('');
+  const [cpfCnpj, setCpfCnpj] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
 
-  const handleCriarConta = () => {
-    if (!nome || !email || !senha) {
-      Alert.alert('Atenção', 'Por favor, preencha pelo menos Nome, E-mail e Senha.');
+  const handleRegistar = () => {
+    // 1. Verifica se os campos obrigatórios estão preenchidos
+    if (!nome || !email || !senha || !confirmarSenha || !cpfCnpj) {
+      Alert.alert('Atenção', 'Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-
+    
+    // 2. Verifica se as senhas coincidem
     if (senha !== confirmarSenha) {
-      Alert.alert('Atenção', 'As senhas digitadas não coincidem.');
+      Alert.alert('Atenção', 'As senhas não coincidem. Verifique e tente novamente.');
       return;
     }
 
-    Alert.alert('Sucesso!', 'Conta criada com sucesso! Bem-vindo ao GatherTech.');
-    aoCadastrar();
+    // Se passar nas validações, cria a conta
+    Alert.alert('Sucesso!', 'Conta criada com sucesso!', [
+      { text: 'OK', onPress: aoCadastrar }
+    ]);
   };
 
   return (
-    <SafeAreaView style={styles.containerAuth}>
-      <ScrollView contentContainerStyle={styles.authBody} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
         
-        <View style={styles.headerAuthArea}>
-          <Image 
-            source={require('../../assets/logo.png')} 
-            style={styles.logoLogin} 
-            resizeMode="contain"
-          />
-          <Text style={styles.welcomeTitle}>Crie sua conta ✨</Text>
-          <Text style={styles.welcomeSub}>
-            Junte-se à comunidade tech e não perca nenhum evento em Salvador.
-          </Text>
-        </View>
+        <Text style={styles.titulo}>Criar Conta</Text>
+        <Text style={styles.sub}>Preencha os dados abaixo para se registar no GatherTech.</Text>
 
-        <View style={styles.formArea}>
-          <Text style={styles.labelInput}>Nome Completo</Text>
+        <View style={styles.form}>
+          <Text style={styles.label}>Nome Completo *</Text>
           <TextInput
-            style={styles.inputAuth}
-            placeholder="Seu nome completo"
+            style={styles.input}
+            placeholder="Ex: Lucas Andrade"
             placeholderTextColor="#8F9CAE"
             value={nome}
             onChangeText={setNome}
           />
 
-          <Text style={styles.labelInput}>E-mail</Text>
+          <Text style={styles.label}>E-mail *</Text>
           <TextInput
-            style={styles.inputAuth}
-            placeholder="seuemail@exemplo.com"
+            style={styles.input}
+            placeholder="seu@email.com"
             placeholderTextColor="#8F9CAE"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -63,72 +58,64 @@ export default function TelaCadastroUsuario({ aoCadastrar, irParaLogin }) {
             onChangeText={setEmail}
           />
 
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.labelInput}>Nascimento</Text>
-              <TextInput
-                style={styles.inputAuth}
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor="#8F9CAE"
-                keyboardType="numeric"
-                value={dataNascimento}
-                onChangeText={setDataNascimento}
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.labelInput}>Telefone</Text>
-              <TextInput
-                style={styles.inputAuth}
-                placeholder="(71) 99999-9999"
-                placeholderTextColor="#8F9CAE"
-                keyboardType="phone-pad"
-                value={telefone}
-                onChangeText={setTelefone}
-              />
-            </View>
-          </View>
-
-          <Text style={styles.labelInput}>CPF ou CNPJ</Text>
+          <Text style={styles.label}>Data de Nascimento</Text>
           <TextInput
-            style={styles.inputAuth}
-            placeholder="000.000.000-00"
+            style={styles.input}
+            placeholder="DD/MM/AAAA"
             placeholderTextColor="#8F9CAE"
-            keyboardType="numeric"
-            value={documento}
-            onChangeText={setDocumento}
+            value={nascimento}
+            onChangeText={setNascimento}
           />
 
-          <Text style={styles.labelInput}>Senha</Text>
+          <Text style={styles.label}>Telefone</Text>
           <TextInput
-            style={styles.inputAuth}
-            placeholder="Crie uma senha forte"
+            style={styles.input}
+            placeholder="(71) 99999-9999"
+            placeholderTextColor="#8F9CAE"
+            keyboardType="phone-pad"
+            value={telefone}
+            onChangeText={setTelefone}
+          />
+
+          <Text style={styles.label}>CPF ou CNPJ *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="000.000.000-00"
+            placeholderTextColor="#8F9CAE"
+            value={cpfCnpj}
+            onChangeText={setCpfCnpj}
+          />
+
+          <Text style={styles.label}>Senha *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Mínimo 6 caracteres"
             placeholderTextColor="#8F9CAE"
             secureTextEntry
             value={senha}
             onChangeText={setSenha}
           />
 
-          <Text style={styles.labelInput}>Confirmar Senha</Text>
+          <Text style={styles.label}>Confirmar Senha *</Text>
           <TextInput
-            style={styles.inputAuth}
-            placeholder="Repita sua senha"
+            style={styles.input}
+            placeholder="Digite a senha novamente"
             placeholderTextColor="#8F9CAE"
             secureTextEntry
             value={confirmarSenha}
             onChangeText={setConfirmarSenha}
           />
 
-          <TouchableOpacity style={[styles.btnPrimarioAuth, { marginTop: 24 }]} onPress={handleCriarConta}>
-            <Text style={styles.textoBtnPrimario}>Criar Conta</Text>
+          <TouchableOpacity style={styles.btnSalvar} onPress={handleRegistar}>
+            <Text style={styles.textoBtnSalvar}>Concluir Cadastro</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={aoVoltar} style={styles.linkLogin}>
+            <Text style={styles.textoLink}>
+              Já tem uma conta? <Text style={styles.textDestaque}>Fazer Login</Text>
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity onPress={irParaLogin} style={styles.linkCadastro}>
-          <Text style={styles.textoLink}>
-            Já tem uma conta? <Text style={styles.textDestaque}>Fazer Login</Text>
-          </Text>
-        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -136,18 +123,16 @@ export default function TelaCadastroUsuario({ aoCadastrar, irParaLogin }) {
 }
 
 const styles = StyleSheet.create({
-  containerAuth: { flex: 1, backgroundColor: '#0B0E14', paddingHorizontal: 24 },
-  authBody: { paddingTop: 40, paddingBottom: 40 },
-  headerAuthArea: { alignItems: 'center', marginBottom: 24 },
-  logoLogin: { width: 90, height: 90, marginBottom: 16 },
-  welcomeTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center', marginBottom: 8 },
-  welcomeSub: { fontSize: 14, color: '#8F9CAE', textAlign: 'center', lineHeight: 20 },
-  formArea: { marginBottom: 20 },
-  labelInput: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 8, marginTop: 12 },
-  inputAuth: { backgroundColor: '#121824', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#1E293B', color: '#FFFFFF', fontSize: 15 },
-  btnPrimarioAuth: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-  textoBtnPrimario: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-  linkCadastro: { alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#090C10', paddingHorizontal: 20 },
+  scrollBody: { paddingTop: 30, paddingBottom: 40 }, 
+  titulo: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 6 },
+  sub: { color: '#94A3B8', fontSize: 14, marginBottom: 24, lineHeight: 20 },
+  form: { width: '100%' },
+  label: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 10 },
+  input: { backgroundColor: '#121620', borderWidth: 1, borderColor: '#1E2430', borderRadius: 10, padding: 12, color: '#FFFFFF', fontSize: 14 },
+  btnSalvar: { backgroundColor: '#0066FF', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 24 },
+  textoBtnSalvar: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  linkLogin: { alignItems: 'center', marginTop: 24 },
   textoLink: { color: '#8F9CAE', fontSize: 14 },
-  textDestaque: { color: '#7C3AED', fontWeight: 'bold' },
+  textDestaque: { color: '#7C3AED', fontWeight: 'bold' }
 });

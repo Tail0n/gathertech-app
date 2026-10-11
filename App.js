@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Alert } from 'react-native';
 
-// Importação correta de todas as telas
+// Importação das Telas
 import TelaOnboarding from './src/screens/TelaOnboarding';
 import TelaLogin from './src/screens/TelaLogin';
 import TelaRecuperarSenha from './src/screens/TelaRecuperarSenha';
 import TelaCadastroUsuario from './src/screens/TelaCadastroUsuario';
 import TelaEventos from './src/screens/TelaEventos';
 import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
+import TelaPerfil from './src/screens/TelaPerfil';
 
 export default function App() {
+  // Estado que controla qual tela está ativa no momento
   const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
 
@@ -90,6 +93,18 @@ export default function App() {
     );
   }
 
+  if (telaAtual === 'Perfil') {
+    return (
+      <SafeAreaProvider>
+        <TelaPerfil 
+          aoSair={() => setTelaAtual('Login')} 
+          irParaInicio={() => setTelaAtual('Feed')} 
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  // AQUI SÓ HÁ UM RETURN FINAL!
   return (
     <SafeAreaProvider>
       <TelaEventos 
@@ -98,6 +113,9 @@ export default function App() {
           setEventoSelecionado(evento);
           setTelaAtual('Detalhes');
         }} 
+        irParaPerfil={() => setTelaAtual('Perfil')}
+        irParaFavoritos={() => Alert.alert('Aviso', 'Tela de Favoritos em breve!')}
+        irParaIngressos={() => Alert.alert('Aviso', 'Tela de Ingressos em breve!')}
       />
     </SafeAreaProvider>
   );
