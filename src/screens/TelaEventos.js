@@ -10,30 +10,32 @@ export default function TelaEventos({
   eventos = [], 
   aoSelecionarEvento, 
   irParaFavoritos, 
-  irParaIngressos, 
-  irParaPerfil 
+  irParaAgenda, 
+  irParaPerfil,
+  tipoUsuario,
+  irParaCriarEvento 
 }) {
   const [busca, setBusca] = useState('');
   const [favoritos, setFavoritos] = useState([]);
+  // NOVO: Controle do Menu Hambúrguer
+  const [menuVisivel, setMenuVisivel] = useState(false);
   
   // Estados para controlar o Modal de Filtros
   const [modalVisivel, setModalVisivel] = useState(false);
-  const [filtroAberto, setFiltroAberto] = useState(''); // 'Modalidade', 'Stack', 'Preço', 'Localização'
+  const [filtroAberto, setFiltroAberto] = useState(''); // 'Modalidade', 'Stack', 'Preço'
   
-  // Estado para armazenar as opções exatas escolhidas pelo utilizador
+  // Estado para armazenar as opções exatas escolhidas pelo utilizador (Localização Removida)
   const [filtrosAtivos, setFiltrosAtivos] = useState({
     Modalidade: null,
     Stack: null,
-    Preço: null,
-    Localização: null
+    Preço: null
   });
 
-  // Opções disponíveis baseadas no MER do banco de dados
+  // Opções disponíveis baseadas no MER do banco de dados (Localização Removida)
   const opcoesFiltro = {
     Modalidade: ['Presencial', 'Online', 'Híbrido'],
     Stack: ['Python', 'Inteligência Artificial', 'React', 'DevOps'],
-    Preço: ['Gratuito', 'Pago'],
-    Localização: ['São Paulo, SP', 'Salvador, BA', 'Remoto']
+    Preço: ['Gratuito', 'Pago']
   };
 
   const toggleFavorito = (id) => {
@@ -76,9 +78,6 @@ export default function TelaEventos({
       if (filtrosAtivos.Preço === 'Pago' && ehGratis) return false;
     }
 
-    // Filtro 5: Localização
-    if (filtrosAtivos.Localização && !item.cidade.includes(filtrosAtivos.Localização)) return false;
-
     return true; 
   });
 
@@ -92,12 +91,12 @@ export default function TelaEventos({
           <View style={styles.logoContainer}>
             <Text style={styles.logoG}>G<Text style={styles.logoT}>T</Text></Text>
           </View>
-          <TouchableOpacity style={styles.btnMenu}>
-            <Feather name="menu" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.btnMenu} onPress={() => setMenuVisivel(true)}>
+          <Feather name="menu" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
         </View>
 
-        {/* SELETOR DE LOCALIZAÇÃO */}
+        {/* SELETOR DE LOCALIZAÇÃO (Fixo no Topo) */}
         <TouchableOpacity style={styles.selectorLocal}>
           <Feather name="map-pin" size={14} color="#8B5CF6" style={styles.iconPinLocal} />
           <Text style={styles.textoLocal}>Brasil</Text>
@@ -116,9 +115,6 @@ export default function TelaEventos({
               onChangeText={setBusca}
             />
           </View>
-          <TouchableOpacity style={styles.btnAjusteFiltro}>
-            <Feather name="sliders" size={18} color="#8B5CF6" />
-          </TouchableOpacity>
         </View>
 
         {/* FILTROS RÁPIDOS */}
@@ -149,15 +145,6 @@ export default function TelaEventos({
             </View>
             <Text style={[styles.labelFiltro, filtrosAtivos.Preço && styles.labelFiltroAtiva]} numberOfLines={1}>
               {filtrosAtivos.Preço || 'Preço'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.itemFiltroRapido} onPress={() => abrirMenuFiltro('Localização')}>
-            <View style={[styles.circuloIconFiltro, filtrosAtivos.Localização && styles.circuloFiltroAtivo]}>
-              <Feather name="map-pin" size={22} color={filtrosAtivos.Localização ? '#FFFFFF' : '#8B5CF6'} />
-            </View>
-            <Text style={[styles.labelFiltro, filtrosAtivos.Localização && styles.labelFiltroAtiva]} numberOfLines={1}>
-              {filtrosAtivos.Localização || 'Local'}
             </Text>
           </TouchableOpacity>
 
@@ -209,6 +196,44 @@ export default function TelaEventos({
         </View>
       </ScrollView>
 
+      {/* MODAL DO MENU HAMBÚRGUER */}
+      <Modal visible={menuVisivel} transparent={true} animationType="fade" onRequestClose={() => setMenuVisivel(false)}>
+        <View style={styles.modalMenuOverlay}>
+          <Pressable style={styles.modalMenuClickableBg} onPress={() => setMenuVisivel(false)} />
+          
+          <View style={styles.modalMenuContent}>
+            <Text style={styles.menuTitle}>Ações da Conta</Text>
+            
+            {/* OPÇÃO 1: CRIAR EVENTO (BLOQUEADA PARA ALUNOS) */}
+            <TouchableOpacity 
+              style={styles.menuOptionButton} 
+              disabled={tipoUsuario !== 'admin'}
+              onPress={() => {
+                setMenuVisivel(false);
+                irParaCriarEvento();
+              }}
+            >
+              <Feather name="plus-square" size={20} color={tipoUsuario === 'admin' ? '#8B5CF6' : '#475569'} />
+              <Text style={[styles.menuOptionText, tipoUsuario !== 'admin' && styles.menuOptionTextInativo]}>
+                Criar Evento
+              </Text>
+              
+              {/* Ícone de Cadeado se não for admin */}
+              {tipoUsuario !== 'admin' && (
+                <Feather name="lock" size={16} color="#475569" style={{ position: 'absolute', right: 16 }} />
+              )}
+            </TouchableOpacity>
+
+            {/* OPÇÃO 2: VER PERFIL (LIVRE) */}
+            <TouchableOpacity style={styles.menuOptionButton} onPress={() => { setMenuVisivel(false); irParaPerfil(); }}>
+              <Feather name="user" size={20} color="#E2E8F0" />
+              <Text style={styles.menuOptionText}>Meu Perfil</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+
       {/* MODAL BOTTOM SHEET DE SELEÇÃO */}
       <Modal
         visible={modalVisivel}
@@ -251,9 +276,9 @@ export default function TelaEventos({
           <Ionicons name="heart-outline" size={24} color="#8F9CAE" />
           <Text style={styles.menuTexto}>Favoritos</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={irParaIngressos}>
-          <Ionicons name="ticket-outline" size={24} color="#8F9CAE" />
-          <Text style={styles.menuTexto}>Ingressos</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={irParaAgenda}>
+          <Feather name="calendar" size={24} color="#8F9CAE" />
+          <Text style={styles.menuTexto}>Agenda</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={irParaPerfil}>
           <Feather name="user" size={24} color="#8F9CAE" />
@@ -270,7 +295,7 @@ const styles = StyleSheet.create({
   selectorLocal: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 20 },
   rowBusca: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24, paddingHorizontal: 20 },
   tituloSecao: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold', marginBottom: 16, paddingHorizontal: 20 },
-  rowFiltrosRapidos: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28, paddingHorizontal: 20 },
+  rowFiltrosRapidos: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 28, paddingHorizontal: 20 }, // Alterado para gap e removido justifyContent
   headerSecao: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 20 },
   listaCards: { gap: 16, paddingHorizontal: 20 },
   
@@ -320,5 +345,14 @@ const styles = StyleSheet.create({
 
   menuInferior: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#090C10', paddingVertical: 12, paddingHorizontal: 24, borderTopWidth: 1, borderTopColor: '#1E2430' },
   menuItem: { alignItems: 'center', justifyContent: 'center' },
-  menuTexto: { fontSize: 11, marginTop: 4, color: '#8F9CAE', fontWeight: '500' }
+  menuTexto: { fontSize: 11, marginTop: 4, color: '#8F9CAE', fontWeight: '500' },
+
+  // ESTILOS DO MENU HAMBÚRGUER
+  modalMenuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalMenuClickableBg: { position: 'absolute', width: '100%', height: '100%' },
+  modalMenuContent: { position: 'absolute', top: 60, right: 20, width: 220, backgroundColor: '#121620', borderRadius: 12, paddingVertical: 12, borderWidth: 1, borderColor: '#1E2430' },
+  menuTitle: { color: '#8F9CAE', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 8, paddingHorizontal: 16 },
+  menuOptionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 },
+  menuOptionText: { color: '#E2E8F0', fontSize: 15, marginLeft: 12 },
+  menuOptionTextInativo: { color: '#475569' },
 });

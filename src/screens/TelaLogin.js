@@ -11,7 +11,7 @@ export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSen
       Alert.alert('Atenção', 'Por favor, preencha o e-mail e a senha.');
       return;
     }
-    aoEntrar();
+    aoEntrar(email);
   };
 
   return (

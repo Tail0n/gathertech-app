@@ -3,6 +3,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Alert } from 'react-native';
 
 // Importação das Telas
+import TelaCriarEvento from './src/screens/TelaCriarEvento';
+import TelaFavoritos from './src/screens/TelaFavoritos';
 import TelaOnboarding from './src/screens/TelaOnboarding';
 import TelaLogin from './src/screens/TelaLogin';
 import TelaRecuperarSenha from './src/screens/TelaRecuperarSenha';
@@ -10,11 +12,13 @@ import TelaCadastroUsuario from './src/screens/TelaCadastroUsuario';
 import TelaEventos from './src/screens/TelaEventos';
 import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
 import TelaPerfil from './src/screens/TelaPerfil';
+import TelaAgenda from './src/screens/TelaAgenda';
 
 export default function App() {
   // Estado que controla qual tela está ativa no momento
   const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
+  const [tipoUsuario, setTipoUsuario] = useState('aluno');
 
   const listaEventos = [
     {
@@ -55,7 +59,15 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <TelaLogin 
-          aoEntrar={() => setTelaAtual('Feed')} 
+          aoEntrar={(emailDigitado) => {
+            // "Porta Secreta": Simulando o banco de dados
+            if (emailDigitado === 'admin@gathertech.com') {
+              setTipoUsuario('admin');
+            } else {
+              setTipoUsuario('aluno');
+            }
+            setTelaAtual('Feed');
+          }} 
           irParaCadastro={() => setTelaAtual('Cadastro')} 
           irParaRecuperarSenha={() => setTelaAtual('RecuperarSenha')} 
         />
@@ -99,6 +111,47 @@ export default function App() {
         <TelaPerfil 
           aoSair={() => setTelaAtual('Login')} 
           irParaInicio={() => setTelaAtual('Feed')} 
+          irParaFavoritos={() => setTelaAtual('Favoritos')}
+          irParaAgenda={() => setTelaAtual('Agenda')}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'Favoritos') {
+    return (
+      <SafeAreaProvider>
+        <TelaFavoritos 
+          irParaInicio={() => setTelaAtual('Feed')} 
+          irParaAgenda={() => setTelaAtual('Agenda')}
+          irParaPerfil={() => setTelaAtual('Perfil')} 
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'Agenda') {
+    return (
+      <SafeAreaProvider>
+        <TelaAgenda 
+          irParaInicio={() => setTelaAtual('Feed')} 
+          irParaFavoritos={() => setTelaAtual('Favoritos')}
+          irParaPerfil={() => setTelaAtual('Perfil')} 
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'CriarEvento') {
+    return (
+      <SafeAreaProvider>
+        <TelaCriarEvento 
+          aoVoltar={() => setTelaAtual('Feed')} 
+          aoSalvar={(novoEvento) => {
+            Alert.alert('Sucesso!', 'Evento simulado criado com sucesso.');
+            // Num futuro próximo, vamos guardar este 'novoEvento' na lista principal!
+            setTelaAtual('Feed');
+          }}
         />
       </SafeAreaProvider>
     );
@@ -108,14 +161,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <TelaEventos 
+        tipoUsuario={tipoUsuario}
         eventos={listaEventos} 
+        irParaCriarEvento={() => setTelaAtual('CriarEvento')}
         aoSelecionarEvento={(evento) => {
           setEventoSelecionado(evento);
           setTelaAtual('Detalhes');
         }} 
         irParaPerfil={() => setTelaAtual('Perfil')}
-        irParaFavoritos={() => Alert.alert('Aviso', 'Tela de Favoritos em breve!')}
-        irParaIngressos={() => Alert.alert('Aviso', 'Tela de Ingressos em breve!')}
+        irParaFavoritos={() => setTelaAtual('Favoritos')}
+        irParaAgenda={() => setTelaAtual('Agenda')}
       />
     </SafeAreaProvider>
   );

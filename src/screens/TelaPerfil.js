@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Alert } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons'; 
 
-export default function TelaPerfil({ aoSair, irParaInicio }) {
+export default function TelaPerfil({ aoSair, irParaInicio, irParaAgenda, irParaFavoritos }) {
   
   // Dados simulados para visualizar como o perfil ficará quando estiver ligado ao Banco de Dados
   const usuario = {
@@ -98,14 +98,14 @@ export default function TelaPerfil({ aoSair, irParaInicio }) {
           <Text style={styles.menuTexto}>Início</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Aviso', 'Ecrã de Favoritos em breve!')}>
+        <TouchableOpacity style={styles.menuItem} onPress={irParaFavoritos}>
           <Ionicons name="heart-outline" size={24} color="#8F9CAE" />
           <Text style={styles.menuTexto}>Favoritos</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Aviso', 'Ecrã de Ingressos em breve!')}>
-          <Ionicons name="ticket-outline" size={24} color="#8F9CAE" />
-          <Text style={styles.menuTexto}>Ingressos</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={irParaAgenda}>
+          <Feather name="calendar" size={24} color="#8F9CAE" />
+          <Text style={styles.menuTexto}>Agenda</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
