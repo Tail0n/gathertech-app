@@ -1,24 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function TelaFavoritos({ irParaInicio, irParaAgenda, irParaPerfil }) {
+export default function TelaFavoritos({ eventos = [], irParaInicio, irParaAgenda, irParaPerfil }) {
   // Dados simulados para o protótipo. 
   // Futuramente, isto virá do AsyncStorage (Offline-First) ou do Banco de Dados.
-  const [favoritos, setFavoritos] = useState([
-    {
-      id: '1',
-      titulo: 'Python Brasil [Conference]',
-      formato: 'Presencial',
-      cidade: 'Salvador, BA',
-      data: '24 Mai • 09:00',
-      imagem: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=600',
-    }
-  ]);
+  const [favoritos, setFavoritos] = useState([]);
 
-  const removerFavorito = (id) => {
-    setFavoritos(favoritos.filter(evento => evento.id !== id));
+  useEffect(() => {
+    carregarEventosFavoritos();
+  }, []);
+
+  const carregarEventosFavoritos = async () => {
+    try {
+      const favSalvos = await AsyncStorage.getItem('@GatherTech:favoritos');
+      if (favSalvos) {
+        const idsFavoritos = JSON.parse(favSalvos);
+        // Filtra a lista completa de eventos pegando apenas os que têm o ID salvo no telemóvel
+        const eventosFiltrados = eventos.filter(evento => idsFavoritos.includes(evento.id));
+        setFavoritos(eventosFiltrados);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar favoritos', error);
+    }
+  };
+
+  const removerFavorito = async (id) => {
+    try {
+      // 1. Remove da tela instantaneamente
+      const novaLista = favoritos.filter(evento => evento.id !== id);
+      setFavoritos(novaLista);
+
+      // 2. Remove da memória do telemóvel
+      const favSalvos = await AsyncStorage.getItem('@GatherTech:favoritos');
+      if (favSalvos) {
+        let idsFavoritos = JSON.parse(favSalvos);
+        idsFavoritos = idsFavoritos.filter(favId => favId !== id);
+        await AsyncStorage.setItem('@GatherTech:favoritos', JSON.stringify(idsFavoritos));
+      }
+    } catch (error) {
+      console.error('Erro ao remover favorito', error);
+    }
   };
 
   return (

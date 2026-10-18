@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Alert } from 'react-native';
+
+// Importação das Telas...
 
 // Importação das Telas
 import TelaCriarEvento from './src/screens/TelaCriarEvento';
@@ -19,8 +22,9 @@ export default function App() {
   const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [tipoUsuario, setTipoUsuario] = useState('aluno');
-
-  const listaEventos = [
+  
+  // Transformamos a lista num Estado! Começa com os dois eventos fixos, mas aceitará novos.
+  const [listaEventos, setListaEventos] = useState([
     {
       id: '1',
       titulo: 'Python Brasil [Conference]',
@@ -45,7 +49,25 @@ export default function App() {
       descricao: 'Aprenda a aplicar modelos de linguagem e IA generativa em projetos reais do dia a dia.',
       imagem: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
     },
-  ];
+  ]);
+
+  // Carrega eventos criados pelo Admin que estão salvos no telemóvel
+  useEffect(() => {
+    const carregarEventosCriados = async () => {
+      try {
+        const eventosSalvos = await AsyncStorage.getItem('@GatherTech:eventosCriados');
+        if (eventosSalvos) {
+          const arrayEventosSalvos = JSON.parse(eventosSalvos);
+          // Junta os eventos padrão com os eventos salvos no telemóvel
+          setListaEventos(listaAntiga => [...listaAntiga, ...arrayEventosSalvos]);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar eventos criados:', error);
+      }
+    };
+    
+    carregarEventosCriados();
+  }, []);
 
   if (telaAtual === 'Onboarding') {
     return (
@@ -122,6 +144,7 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <TelaFavoritos 
+          eventos={listaEventos}
           irParaInicio={() => setTelaAtual('Feed')} 
           irParaAgenda={() => setTelaAtual('Agenda')}
           irParaPerfil={() => setTelaAtual('Perfil')} 
@@ -147,10 +170,25 @@ export default function App() {
       <SafeAreaProvider>
         <TelaCriarEvento 
           aoVoltar={() => setTelaAtual('Feed')} 
-          aoSalvar={(novoEvento) => {
-            Alert.alert('Sucesso!', 'Evento simulado criado com sucesso.');
-            // Num futuro próximo, vamos guardar este 'novoEvento' na lista principal!
-            setTelaAtual('Feed');
+          aoSalvar={async (novoEvento) => { // <-- Adicionei async aqui
+            try {
+              // 1. Atualiza a lista na tela instantaneamente
+              setListaEventos([...listaEventos, novoEvento]);
+              
+              // 2. Prepara o evento para guardar no disco
+              const eventosSalvos = await AsyncStorage.getItem('@GatherTech:eventosCriados');
+              let arrayEventosSalvos = eventosSalvos ? JSON.parse(eventosSalvos) : [];
+              arrayEventosSalvos.push(novoEvento);
+              
+              // 3. Salva efetivamente na memória do telemóvel
+              await AsyncStorage.setItem('@GatherTech:eventosCriados', JSON.stringify(arrayEventosSalvos));
+              
+              Alert.alert('Sucesso!', 'Evento criado com sucesso.');
+              setTelaAtual('Feed');
+            } catch (error) {
+              console.error('Erro ao salvar novo evento', error);
+              Alert.alert('Erro', 'Não foi possível salvar o evento.');
+            }
           }}
         />
       </SafeAreaProvider>

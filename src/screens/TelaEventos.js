@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   StyleSheet, Text, View, TouchableOpacity, TextInput, 
   ScrollView, Image, Modal, Pressable
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons'; 
+
 
 export default function TelaEventos({ 
   eventos = [], 
@@ -31,6 +33,21 @@ export default function TelaEventos({
     Preço: null
   });
 
+  useEffect(() => {
+    carregarFavoritos();
+  }, []);
+
+  const carregarFavoritos = async () => {
+    try {
+      const favSalvos = await AsyncStorage.getItem('@GatherTech:favoritos');
+      if (favSalvos) {
+        setFavoritos(JSON.parse(favSalvos)); // Transforma o texto de volta em Array
+      }
+    } catch (error) {
+      console.error('Erro ao carregar favoritos', error);
+    }
+  };
+
   // Opções disponíveis baseadas no MER do banco de dados (Localização Removida)
   const opcoesFiltro = {
     Modalidade: ['Presencial', 'Online', 'Híbrido'],
@@ -38,9 +55,20 @@ export default function TelaEventos({
     Preço: ['Gratuito', 'Pago']
   };
 
-  const toggleFavorito = (id) => {
-    if (favoritos.includes(id)) setFavoritos(favoritos.filter(favId => favId !== id));
-    else setFavoritos([...favoritos, id]);
+  const toggleFavorito = async (id) => {
+    try {
+      let novaLista;
+      if (favoritos.includes(id)) {
+        novaLista = favoritos.filter(favId => favId !== id); // Remove
+      } else {
+        novaLista = [...favoritos, id]; // Adiciona
+      }
+      
+      setFavoritos(novaLista); // Atualiza a tela
+      await AsyncStorage.setItem('@GatherTech:favoritos', JSON.stringify(novaLista)); // Salva no telemóvel
+    } catch (error) {
+      console.error('Erro ao salvar favorito', error);
+    }
   };
 
   const abrirMenuFiltro = (tipoFiltro) => {
