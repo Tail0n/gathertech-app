@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Alert } from 'react-native';
-
-// Importação das Telas...
+import { Alert, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 
 // Importação das Telas
 import TelaCriarEvento from './src/screens/TelaCriarEvento';
@@ -17,58 +15,78 @@ import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
 import TelaPerfil from './src/screens/TelaPerfil';
 import TelaAgenda from './src/screens/TelaAgenda';
 
+// ⚠️ SUBSTiTUA '192.168.X.X' PELO SEU IPV4 OBTIDO NO IPCONFIG
+const API_URL = 'http://10.0.0.102:3000/api/eventos';
+
 export default function App() {
-  // Estado que controla qual tela está ativa no momento
   const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [tipoUsuario, setTipoUsuario] = useState('aluno');
   
-  // Transformamos a lista num Estado! Começa com os dois eventos fixos, mas aceitará novos.
-  const [listaEventos, setListaEventos] = useState([
-    {
-      id: '1',
-      titulo: 'Python Brasil [Conference]',
-      formato: 'Presencial',
-      cidade: 'Salvador, BA',
-      tech: 'Python / Backend',
-      preco: 'R$ 50,00',
-      nota: 4.8,
-      localExato: 'Centro de Convenções de Salvador',
-      descricao: 'O maior evento de Python do país reunindo especialistas e entusiastas para palestras e networking.',
-      imagem: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      id: '2',
-      titulo: 'IA Generativa na Prática',
-      formato: 'Online',
-      cidade: 'Remoto',
-      tech: 'Inteligência Artificial',
-      preco: 'Gratuito',
-      nota: 4.9,
-      localExato: 'Transmissão ao vivo via YouTube',
-      descricao: 'Aprenda a aplicar modelos de linguagem e IA generativa em projetos reais do dia a dia.',
-      imagem: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
-    },
-  ]);
+  // Estado para armazenar os eventos que vêm do PostgreSQL
+  const [listaEventos, setListaEventos] = useState([]);
+  
+  // Estado de carregamento inicial
+  const [carregandoEventos, setCarregandoEventos] = useState(true);
 
-  // Carrega eventos criados pelo Admin que estão salvos no telemóvel
+  // Função para buscar eventos na API Node.js / PostgreSQL
+  const buscarEventosDaAPI = async () => {
+    try {
+      setCarregandoEventos(true);
+      const resposta = await fetch(API_URL);
+      const dados = await resposta.json();
+
+      // Mapeia os campos da tabela PostgreSQL para a estrutura que a TelaEventos espera
+      const eventosDaApi = dados.map((item) => ({
+        id: item.id_evento.toString(),
+        titulo: item.nome_evento,
+        descricao: item.descricao_evento,
+        imagem: item.imagem,
+        preco: item.tipo_ingresso,
+        formato: item.modalidade,
+        data: item.data_inicio ? new Date(item.data_inicio).toLocaleDateString('pt-BR') : 'A definir',
+        cidade: 'Salvador',
+        tech: 'Python', // Ou campo dinâmico caso a API envie a stack
+        nota: 5.0
+      }));
+
+      // Inicia a lista apenas com os eventos do banco
+      setListaEventos(eventosDaApi);
+      return eventosDaApi;
+      
+    } catch (erro) {
+      console.error('Erro ao ligar à API:', erro);
+      Alert.alert('Aviso', 'Não foi possível carregar eventos do servidor. Verifique o servidor Node.');
+      return [];
+    } finally {
+      setCarregandoEventos(false);
+    }
+  };
+
   useEffect(() => {
-    const carregarEventosCriados = async () => {
+    // Função principal que orquestra o carregamento na inicialização
+    const carregarTudo = async () => {
+      // 1. Primeiro busca do banco (PostgreSQL via API)
+      const eventosBackend = await buscarEventosDaAPI();
+      
+      // 2. Depois carrega os eventos que o Admin criou e salvou localmente no telemóvel
       try {
-        const eventosSalvos = await AsyncStorage.getItem('@GatherTech:eventosCriados');
-        if (eventosSalvos) {
-          const arrayEventosSalvos = JSON.parse(eventosSalvos);
-          // Junta os eventos padrão com os eventos salvos no telemóvel
-          setListaEventos(listaAntiga => [...listaAntiga, ...arrayEventosSalvos]);
+        const eventosSalvosLocalmente = await AsyncStorage.getItem('@GatherTech:eventosCriados');
+        if (eventosSalvosLocalmente) {
+          const arrayEventosSalvos = JSON.parse(eventosSalvosLocalmente);
+          
+          // Junta os eventos da API com os criados localmente
+          setListaEventos([...eventosBackend, ...arrayEventosSalvos]);
         }
       } catch (error) {
-        console.error('Erro ao carregar eventos criados:', error);
+        console.error('Erro ao carregar eventos criados localmente:', error);
       }
     };
     
-    carregarEventosCriados();
+    carregarTudo();
   }, []);
 
+  // Telas de Navegação (mantidas exatamente como as suas originais)
   if (telaAtual === 'Onboarding') {
     return (
       <SafeAreaProvider>
@@ -82,7 +100,6 @@ export default function App() {
       <SafeAreaProvider>
         <TelaLogin 
           aoEntrar={(emailDigitado) => {
-            // "Porta Secreta": Simulando o banco de dados
             if (emailDigitado === 'admin@gathertech.com') {
               setTipoUsuario('admin');
             } else {
@@ -170,17 +187,14 @@ export default function App() {
       <SafeAreaProvider>
         <TelaCriarEvento 
           aoVoltar={() => setTelaAtual('Feed')} 
-          aoSalvar={async (novoEvento) => { // <-- Adicionei async aqui
+          aoSalvar={async (novoEvento) => { 
             try {
-              // 1. Atualiza a lista na tela instantaneamente
               setListaEventos([...listaEventos, novoEvento]);
               
-              // 2. Prepara o evento para guardar no disco
               const eventosSalvos = await AsyncStorage.getItem('@GatherTech:eventosCriados');
               let arrayEventosSalvos = eventosSalvos ? JSON.parse(eventosSalvos) : [];
               arrayEventosSalvos.push(novoEvento);
               
-              // 3. Salva efetivamente na memória do telemóvel
               await AsyncStorage.setItem('@GatherTech:eventosCriados', JSON.stringify(arrayEventosSalvos));
               
               Alert.alert('Sucesso!', 'Evento criado com sucesso.');
@@ -195,7 +209,17 @@ export default function App() {
     );
   }
 
-  // AQUI SÓ HÁ UM RETURN FINAL!
+  // Se o carregamento da API ainda não terminou, mostra o loading
+  if (carregandoEventos && telaAtual === 'Feed') {
+    return (
+      <SafeAreaProvider style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8B5CF6" />
+        <Text style={styles.loadingText}>A carregar eventos do banco de dados...</Text>
+      </SafeAreaProvider>
+    );
+  }
+
+  // Tela principal do Feed
   return (
     <SafeAreaProvider>
       <TelaEventos 
@@ -213,3 +237,17 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: { 
+    flex: 1, 
+    backgroundColor: '#090C10', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  loadingText: { 
+    color: '#8F9CAE', 
+    marginTop: 12, 
+    fontSize: 14 
+  }
+});
