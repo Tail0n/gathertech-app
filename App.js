@@ -9,14 +9,14 @@ import TelaFavoritos from './src/screens/TelaFavoritos';
 import TelaOnboarding from './src/screens/TelaOnboarding';
 import TelaLogin from './src/screens/TelaLogin';
 import TelaRecuperarSenha from './src/screens/TelaRecuperarSenha';
-import TelaCadastroUsuario from './src/screens/TelaCadastroUsuario';
+import TelaCadastro from './src/screens/TelaCadastro';
 import TelaEventos from './src/screens/TelaEventos';
 import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
 import TelaPerfil from './src/screens/TelaPerfil';
 import TelaAgenda from './src/screens/TelaAgenda';
 
 // ⚠️ SUBSTiTUA '192.168.X.X' PELO SEU IPV4 OBTIDO NO IPCONFIG
-const API_URL = 'http://10.0.0.102:3000/api/eventos';
+const API_URL = 'http://10.0.0.100:3000/api/eventos';
 
 export default function App() {
   const [telaAtual, setTelaAtual] = useState('Onboarding');
@@ -95,15 +95,16 @@ export default function App() {
     );
   }
 
-  if (telaAtual === 'Login') {
+if (telaAtual === 'Login') {
     return (
       <SafeAreaProvider>
         <TelaLogin 
-          aoEntrar={(emailDigitado) => {
-            if (emailDigitado === 'admin@gathertech.com') {
-              setTipoUsuario('admin');
+          aoEntrar={(usuarioLogado) => {
+            // Define o tipo de utilizador baseado na resposta do banco PostgreSQL
+            if (usuarioLogado && usuarioLogado.tipo_usuario) {
+              setTipoUsuario(usuarioLogado.tipo_usuario);
             } else {
-              setTipoUsuario('aluno');
+              setTipoUsuario('aluno'); // Padrão seguro
             }
             setTelaAtual('Feed');
           }} 
@@ -125,9 +126,8 @@ export default function App() {
   if (telaAtual === 'Cadastro') {
     return (
       <SafeAreaProvider>
-        <TelaCadastroUsuario 
+        <TelaCadastro 
           aoVoltar={() => setTelaAtual('Login')} 
-          aoCadastrar={() => setTelaAtual('Feed')} 
         />
       </SafeAreaProvider>
     );

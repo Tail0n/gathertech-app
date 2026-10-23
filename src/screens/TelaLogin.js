@@ -1,17 +1,44 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// ⚠️ SUBSTITUA PELO SEU IPV4 DA REDE LOCAL OBTIDO NO IPCONFIG
+const API_URL = 'http://10.0.0.100:3000/api/login';
 
 export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSenha }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !senha) {
       Alert.alert('Atenção', 'Por favor, preencha o e-mail e a senha.');
       return;
     }
-    aoEntrar(email);
+
+    try {
+      setCarregando(true);
+      
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), senha }),
+      });
+
+      const dados = await resposta.json();
+
+      if (resposta.ok && dados.usuario) {
+        // Envia o objeto completo do usuário (com o tipo_usuario vindo do banco) para o App.js
+        aoEntrar(dados.usuario);
+      } else {
+        Alert.alert('Falha no Login', dados.erro || 'E-mail ou senha incorretos.');
+      }
+    } catch (erro) {
+      console.error('Erro no login:', erro);
+      Alert.alert('Erro de Conexão', 'Não foi possível ligar ao servidor da API. Verifique o seu IP.');
+    } finally {
+      setCarregando(false);
+    }
   };
 
   return (
@@ -56,8 +83,12 @@ export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSen
             <Text style={styles.textoEsqueciSenha}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btnPrimarioAuth} onPress={handleLogin}>
-            <Text style={styles.textoBtnPrimario}>Entrar</Text>
+          <TouchableOpacity style={styles.btnPrimarioAuth} onPress={handleLogin} disabled={carregando}>
+            {carregando ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.textoBtnPrimario}>Entrar</Text>
+            )}
           </TouchableOpacity>
         </View>
 
