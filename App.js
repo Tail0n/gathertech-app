@@ -9,20 +9,28 @@ import TelaFavoritos from './src/screens/TelaFavoritos';
 import TelaOnboarding from './src/screens/TelaOnboarding';
 import TelaLogin from './src/screens/TelaLogin';
 import TelaRecuperarSenha from './src/screens/TelaRecuperarSenha';
+import TelaValidarCodigo from './src/screens/TelaValidarCodigo';
+import TelaRedefinirSenha from './src/screens/TelaRedefinirSenha';
 import TelaCadastro from './src/screens/TelaCadastro';
 import TelaEventos from './src/screens/TelaEventos';
 import TelaDetalhesEvento from './src/screens/TelaDetalhesEvento';
 import TelaPerfil from './src/screens/TelaPerfil';
 import TelaAgenda from './src/screens/TelaAgenda';
+import TelaAdmin from './src/screens/TelaAdmin';
 
-// ⚠️ SUBSTiTUA '192.168.X.X' PELO SEU IPV4 OBTIDO NO IPCONFIG
-const API_URL = 'http://10.0.0.100:3000/api/eventos';
+// ⚠️ SUBSTiTUA '10.0.0.102' PELO SEU IPV4 SE NECESSÁRIO
+const API_URL = 'http://10.0.0.102:3000/api/eventos';
 
 export default function App() {
   const [telaAtual, setTelaAtual] = useState('Onboarding');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [tipoUsuario, setTipoUsuario] = useState('aluno');
   
+  // Estados para o fluxo de Recuperação de Senha
+  const [emailRecuperacao, setEmailRecuperacao] = useState('');
+  const [codigoValidado, setCodigoValidado] = useState('');
+
   // Estado para armazenar os eventos que vêm do PostgreSQL
   const [listaEventos, setListaEventos] = useState([]);
   
@@ -36,24 +44,26 @@ export default function App() {
       const resposta = await fetch(API_URL);
       const dados = await resposta.json();
 
-      // Mapeia os campos da tabela PostgreSQL para a estrutura que a TelaEventos espera
-      const eventosDaApi = dados.map((item) => ({
-        id: item.id_evento.toString(),
-        titulo: item.nome_evento,
-        descricao: item.descricao_evento,
-        imagem: item.imagem,
-        preco: item.tipo_ingresso,
-        formato: item.modalidade,
-        data: item.data_inicio ? new Date(item.data_inicio).toLocaleDateString('pt-BR') : 'A definir',
-        cidade: 'Salvador',
-        tech: 'Python', // Ou campo dinâmico caso a API envie a stack
-        nota: 5.0
-      }));
+      if (Array.isArray(dados)) {
+        const eventosDaApi = dados.map((item) => ({
+          id: item.id_evento?.toString(),
+          id_evento: item.id_evento,
+          titulo: item.nome_evento,
+          nome_evento: item.nome_evento,
+          descricao: item.descricao_evento,
+          imagem: item.imagem,
+          preco: item.tipo_ingresso,
+          formato: item.modalidade,
+          modalidade: item.modalidade,
+          data: item.data_inicio ? new Date(item.data_inicio).toLocaleDateString('pt-BR') : 'A definir',
+          data_inicio: item.data_inicio,
+          cidade: item.cidade || 'Salvador'
+        }));
 
-      // Inicia a lista apenas com os eventos do banco
-      setListaEventos(eventosDaApi);
-      return eventosDaApi;
-      
+        setListaEventos(eventosDaApi);
+        return eventosDaApi;
+      }
+      return [];
     } catch (erro) {
       console.error('Erro ao ligar à API:', erro);
       Alert.alert('Aviso', 'Não foi possível carregar eventos do servidor. Verifique o servidor Node.');
@@ -64,18 +74,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Função principal que orquestra o carregamento na inicialização
     const carregarTudo = async () => {
-      // 1. Primeiro busca do banco (PostgreSQL via API)
       const eventosBackend = await buscarEventosDaAPI();
       
-      // 2. Depois carrega os eventos que o Admin criou e salvou localmente no telemóvel
       try {
         const eventosSalvosLocalmente = await AsyncStorage.getItem('@GatherTech:eventosCriados');
         if (eventosSalvosLocalmente) {
           const arrayEventosSalvos = JSON.parse(eventosSalvosLocalmente);
-          
-          // Junta os eventos da API com os criados localmente
           setListaEventos([...eventosBackend, ...arrayEventosSalvos]);
         }
       } catch (error) {
@@ -86,7 +91,7 @@ export default function App() {
     carregarTudo();
   }, []);
 
-  // Telas de Navegação (mantidas exatamente como as suas originais)
+  // Telas de Navegação
   if (telaAtual === 'Onboarding') {
     return (
       <SafeAreaProvider>
@@ -95,16 +100,16 @@ export default function App() {
     );
   }
 
-if (telaAtual === 'Login') {
+  if (telaAtual === 'Login') {
     return (
       <SafeAreaProvider>
         <TelaLogin 
-          aoEntrar={(usuarioLogado) => {
-            // Define o tipo de utilizador baseado na resposta do banco PostgreSQL
-            if (usuarioLogado && usuarioLogado.tipo_usuario) {
-              setTipoUsuario(usuarioLogado.tipo_usuario);
+          aoEntrar={(usuario) => {
+            setUsuarioLogado(usuario);
+            if (usuario && usuario.tipo_usuario) {
+              setTipoUsuario(usuario.tipo_usuario);
             } else {
-              setTipoUsuario('aluno'); // Padrão seguro
+              setTipoUsuario('aluno');
             }
             setTelaAtual('Feed');
           }} 
@@ -115,10 +120,48 @@ if (telaAtual === 'Login') {
     );
   }
 
+  // FLUXO DE RECUPERAÇÃO DE SENHA (3 ETAPAS)
   if (telaAtual === 'RecuperarSenha') {
     return (
       <SafeAreaProvider>
-        <TelaRecuperarSenha aoVoltar={() => setTelaAtual('Login')} />
+        <TelaRecuperarSenha 
+          aoVoltar={() => setTelaAtual('Login')} 
+          aoAvancar={(email) => {
+            setEmailRecuperacao(email);
+            setTelaAtual('ValidarCodigo');
+          }}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'ValidarCodigo') {
+    return (
+      <SafeAreaProvider>
+        <TelaValidarCodigo 
+          email={emailRecuperacao}
+          aoVoltar={() => setTelaAtual('RecuperarSenha')}
+          aoSucesso={(codigo) => {
+            setCodigoValidado(codigo);
+            setTelaAtual('RedefinirSenha');
+          }}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'RedefinirSenha') {
+    return (
+      <SafeAreaProvider>
+        <TelaRedefinirSenha 
+          email={emailRecuperacao}
+          codigo={codigoValidado}
+          aoConcluir={() => {
+            setEmailRecuperacao('');
+            setCodigoValidado('');
+            setTelaAtual('Login');
+          }}
+        />
       </SafeAreaProvider>
     );
   }
@@ -148,10 +191,31 @@ if (telaAtual === 'Login') {
     return (
       <SafeAreaProvider>
         <TelaPerfil 
-          aoSair={() => setTelaAtual('Login')} 
+          usuario={usuarioLogado}
+          aoSair={() => {
+            setUsuarioLogado(null);
+            setTipoUsuario('aluno');
+            setTelaAtual('Login');
+          }} 
+          irParaAdmin={() => setTelaAtual('Admin')}
           irParaInicio={() => setTelaAtual('Feed')} 
           irParaFavoritos={() => setTelaAtual('Favoritos')}
           irParaAgenda={() => setTelaAtual('Agenda')}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  if (telaAtual === 'Admin') {
+    return (
+      <SafeAreaProvider>
+        <TelaAdmin 
+          irParaCriarEvento={() => setTelaAtual('CriarEvento')}
+          irParaEditarEvento={(evento) => {
+            setEventoSelecionado(evento);
+            setTelaAtual('CriarEvento');
+          }}
+          irParaVoltar={() => setTelaAtual('Perfil')}
         />
       </SafeAreaProvider>
     );
@@ -198,6 +262,7 @@ if (telaAtual === 'Login') {
               await AsyncStorage.setItem('@GatherTech:eventosCriados', JSON.stringify(arrayEventosSalvos));
               
               Alert.alert('Sucesso!', 'Evento criado com sucesso.');
+              buscarEventosDaAPI(); // Atualiza a lista vinda da API
               setTelaAtual('Feed');
             } catch (error) {
               console.error('Erro ao salvar novo evento', error);
@@ -209,7 +274,6 @@ if (telaAtual === 'Login') {
     );
   }
 
-  // Se o carregamento da API ainda não terminou, mostra o loading
   if (carregandoEventos && telaAtual === 'Feed') {
     return (
       <SafeAreaProvider style={styles.loadingContainer}>
@@ -219,7 +283,6 @@ if (telaAtual === 'Login') {
     );
   }
 
-  // Tela principal do Feed
   return (
     <SafeAreaProvider>
       <TelaEventos 

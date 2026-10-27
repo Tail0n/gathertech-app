@@ -1,116 +1,125 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { 
+  StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Alert 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, Ionicons } from '@expo/vector-icons'; 
+import { Ionicons, Feather } from '@expo/vector-icons';
 
-export default function TelaPerfil({ aoSair, irParaInicio, irParaAgenda, irParaFavoritos }) {
-  
-  // Dados simulados para visualizar como o perfil ficará quando estiver ligado ao Banco de Dados
-  const usuario = {
-    nome: "Tailon Santana",
-    email: "tailon@email.com",
-    telefone: "(71) 99999-9999",
-    avatar: "https://i.pravatar.cc/150?img=11"
+export default function TelaPerfil({ 
+  usuario, 
+  aoSair, 
+  irParaAdmin, 
+  irParaInicio, 
+  irParaFavoritos, 
+  irParaAgenda 
+}) {
+  const eAdmin = usuario?.tipo_usuario === 'admin';
+
+  const handleSair = () => {
+    Alert.alert(
+      'Sair da Conta',
+      'Tem certeza que deseja encerrar a sua sessão?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: aoSair }
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ScrollView para permitir rolagem caso sejam adicionadas muitas opções no futuro */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* --- CABEÇALHO --- */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Meu Perfil</Text>
-          <TouchableOpacity style={styles.btnConfig} onPress={() => Alert.alert('Aviso', 'Configurações em breve!')}>
-            <Feather name="settings" size={22} color="#8F9CAE" />
-          </TouchableOpacity>
-        </View>
-
-        {/* --- INFO DO USUÁRIO --- */}
-        <View style={styles.userInfoSection}>
-          <Image source={{ uri: usuario.avatar }} style={styles.avatar} />
-          <Text style={styles.userName}>{usuario.nome}</Text>
-          <Text style={styles.userEmail}>{usuario.email}</Text>
+        {/* CABEÇALHO DO PERFIL */}
+        <View style={styles.headerPerfil}>
+          <Image 
+            source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }} 
+            style={styles.fotoPerfil} 
+          />
+          <Text style={styles.nomeUsuario}>{usuario?.nome_usuario || 'Utilizador GatherTech'}</Text>
+          <Text style={styles.emailUsuario}>{usuario?.email || 'email@exemplo.com'}</Text>
           
-          <View style={styles.badgeContainer}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Membro GatherTech</Text>
-            </View>
+          <View style={[styles.badgeTipo, eAdmin ? styles.badgeAdmin : styles.badgeAluno]}>
+            <Text style={styles.textoBadge}>
+              {eAdmin ? 'ADMINISTRADOR' : 'ALUNO'}
+            </Text>
           </View>
         </View>
 
-        {/* --- OPÇÕES DE CONTA --- */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Conta</Text>
+        {/* SECÇÃO EXCLUSIVA DE ADMINISTRAÇÃO */}
+        {eAdmin && (
+          <View style={styles.secaoAdmin}>
+            <Text style={styles.secaoTitulo}>Painel de Controlo</Text>
+            <TouchableOpacity style={styles.btnAdminCard} onPress={irParaAdmin}>
+              <View style={styles.iconAdminContainer}>
+                <Feather name="shield" size={24} color="#FFFFFF" />
+              </View>
+              <View style={styles.infoAdminCard}>
+                <Text style={styles.tituloAdminCard}>Painel Administrativo</Text>
+                <Text style={styles.subAdminCard}>Gerir métricas, utilizadores e eventos</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color="#8B5CF6" />
+            </TouchableOpacity>
+          </View>
+        )}
 
-          <TouchableOpacity style={styles.optionItem}>
-            <View style={styles.optionIconBg}>
-              <Feather name="user" size={18} color="#8B5CF6" />
+        {/* OPÇÕES DA CONTA */}
+        <Text style={styles.secaoTitulo}>Definições da Conta</Text>
+
+        <View style={styles.opcoesGroup}>
+          <TouchableOpacity style={styles.opcaoItem}>
+            <View style={styles.opcaoLeft}>
+              <Feather name="user" size={20} color="#8F9CAE" />
+              <Text style={styles.opcaoTexto}>Editar Perfil</Text>
             </View>
-            <Text style={styles.optionText}>Editar Dados Pessoais</Text>
             <Feather name="chevron-right" size={18} color="#8F9CAE" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
-            <View style={styles.optionIconBg}>
-              <Feather name="bell" size={18} color="#8B5CF6" />
+          <TouchableOpacity style={styles.opcaoItem}>
+            <View style={styles.opcaoLeft}>
+              <Feather name="lock" size={20} color="#8F9CAE" />
+              <Text style={styles.opcaoTexto}>Alterar Palavra-passe</Text>
             </View>
-            <Text style={styles.optionText}>Notificações</Text>
             <Feather name="chevron-right" size={18} color="#8F9CAE" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
-            <View style={styles.optionIconBg}>
-              <Feather name="moon" size={18} color="#8B5CF6" />
+          <TouchableOpacity style={styles.opcaoItem}>
+            <View style={styles.opcaoLeft}>
+              <Feather name="bell" size={20} color="#8F9CAE" />
+              <Text style={styles.opcaoTexto}>Notificações</Text>
             </View>
-            <Text style={styles.optionText}>Tema Escuro</Text>
-            <Text style={styles.optionStatus}>Ativado</Text>
+            <Feather name="chevron-right" size={18} color="#8F9CAE" />
           </TouchableOpacity>
         </View>
 
-        {/* --- OUTRAS OPÇÕES --- */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Outros</Text>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <View style={styles.optionIconBg}>
-              <Feather name="help-circle" size={18} color="#8B5CF6" />
-            </View>
-            <Text style={styles.optionText}>Central de Ajuda</Text>
-            <Feather name="chevron-right" size={18} color="#8F9CAE" />
-          </TouchableOpacity>
-
-          {/* --- BOTÃO DE SAIR DA CONTA --- */}
-          <TouchableOpacity style={[styles.optionItem, styles.logoutItem]} onPress={aoSair}>
-            <View style={[styles.optionIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-              <Feather name="log-out" size={18} color="#EF4444" />
-            </View>
-            <Text style={styles.logoutText}>Sair da Conta</Text>
-          </TouchableOpacity>
-        </View>
+        {/* BOTÃO DE TERMINAR SESSÃO */}
+        <TouchableOpacity style={styles.btnSair} onPress={handleSair}>
+          <Feather name="log-out" size={20} color="#EF4444" />
+          <Text style={styles.textoBtnSair}>Terminar Sessão</Text>
+        </TouchableOpacity>
 
       </ScrollView>
 
-      {/* --- MENU INFERIOR FIXO --- */}
-      <View style={styles.menuInferior}>
-        <TouchableOpacity style={styles.menuItem} onPress={irParaInicio}>
-          <Ionicons name="home-outline" size={24} color="#8F9CAE" />
-          <Text style={styles.menuTexto}>Início</Text>
+      {/* BARRA DE NAVEGAÇÃO INFERIOR */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.tabItem} onPress={irParaInicio}>
+          <Ionicons name="home-outline" size={22} color="#8F9CAE" />
+          <Text style={styles.tabLabel}>Início</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} onPress={irParaFavoritos}>
-          <Ionicons name="heart-outline" size={24} color="#8F9CAE" />
-          <Text style={styles.menuTexto}>Favoritos</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={irParaFavoritos}>
+          <Ionicons name="heart-outline" size={22} color="#8F9CAE" />
+          <Text style={styles.tabLabel}>Favoritos</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} onPress={irParaAgenda}>
-          <Feather name="calendar" size={24} color="#8F9CAE" />
-          <Text style={styles.menuTexto}>Agenda</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={irParaAgenda}>
+          <Ionicons name="calendar-outline" size={22} color="#8F9CAE" />
+          <Text style={styles.tabLabel}>Agenda</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Feather name="user" size={24} color="#8B5CF6" />
-          <Text style={[styles.menuTexto, { color: '#8B5CF6' }]}>Perfil</Text>
+        <TouchableOpacity style={styles.tabItem}>
+          <Ionicons name="person" size={22} color="#8B5CF6" />
+          <Text style={[styles.tabLabel, styles.tabActive]}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -118,145 +127,76 @@ export default function TelaPerfil({ aoSair, irParaInicio, irParaAgenda, irParaF
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#090C10' 
-  },
-  
-  // CABEÇALHO
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    marginTop: 12, 
-    marginBottom: 24,
-    position: 'relative'
-  },
-  headerTitle: { 
-    color: '#F8FAFC', 
-    fontSize: 18, 
-    fontWeight: 'bold' 
-  },
-  btnConfig: { 
-    position: 'absolute', 
-    right: 20, 
-    padding: 6 
-  },
-
-  // INFO DO USUÁRIO
-  userInfoSection: { 
-    alignItems: 'center', 
-    marginBottom: 32 
-  },
-  avatar: { 
-    width: 100, 
-    height: 100, 
-    borderRadius: 50, 
-    borderWidth: 3, 
-    borderColor: '#8B5CF6', 
-    marginBottom: 16 
-  },
-  userName: { 
-    color: '#F8FAFC', 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    marginBottom: 4 
-  },
-  userEmail: { 
-    color: '#8F9CAE', 
-    fontSize: 14, 
-    marginBottom: 12 
-  },
-  badgeContainer: { 
-    flexDirection: 'row' 
-  },
-  badge: { 
-    backgroundColor: '#1E2430', 
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 12, 
-    borderWidth: 1, 
-    borderColor: '#2D3748' 
-  },
-  badgeText: { 
-    color: '#E2E8F0', 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-
-  // SEÇÕES DE MENU
-  menuSection: { 
-    paddingHorizontal: 20, 
-    marginBottom: 24 
-  },
-  sectionTitle: { 
-    color: '#F8FAFC', 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    marginBottom: 12 
-  },
-  optionItem: { 
+  container: { flex: 1, backgroundColor: '#090C10' },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 20 },
+  headerPerfil: { alignItems: 'center', marginBottom: 28 },
+  fotoPerfil: { width: 90, height: 90, borderRadius: 45, marginBottom: 12, borderWidth: 2, borderColor: '#8B5CF6' },
+  nomeUsuario: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
+  emailUsuario: { color: '#8F9CAE', fontSize: 14, marginBottom: 10 },
+  badgeTipo: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
+  badgeAdmin: { backgroundColor: '#8B5CF6' },
+  badgeAluno: { backgroundColor: '#1E293B' },
+  textoBadge: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
+  secaoTitulo: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold', marginBottom: 14 },
+  secaoAdmin: { marginBottom: 24 },
+  btnAdminCard: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#121620', 
+    backgroundColor: '#121824', 
     padding: 16, 
     borderRadius: 16, 
-    marginBottom: 12, 
     borderWidth: 1, 
-    borderColor: '#1E2430' 
+    borderColor: '#8B5CF6' 
   },
-  optionIconBg: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 10, 
-    backgroundColor: '#1E2430', 
+  iconAdminContainer: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 12, 
+    backgroundColor: '#8B5CF6', 
     justifyContent: 'center', 
     alignItems: 'center', 
-    marginRight: 14 
+    marginRight: 12 
   },
-  optionText: { 
-    flex: 1, 
-    color: '#E2E8F0', 
-    fontSize: 15, 
-    fontWeight: '500' 
-  },
-  optionStatus: { 
-    color: '#8F9CAE', 
-    fontSize: 13, 
-    marginRight: 8 
-  },
-
-  // BOTÃO DE SAIR
-  logoutItem: { 
-    borderColor: 'rgba(239, 68, 68, 0.2)' 
-  },
-  logoutText: { 
-    flex: 1, 
-    color: '#EF4444', 
-    fontSize: 15, 
-    fontWeight: 'bold' 
-  },
-
-  // MENU INFERIOR
-  menuInferior: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#090C10',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#1E2430',
-  },
-  menuItem: { 
+  infoAdminCard: { flex: 1 },
+  tituloAdminCard: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
+  subAdminCard: { color: '#8F9CAE', fontSize: 12, marginTop: 2 },
+  opcoesGroup: { backgroundColor: '#121824', borderRadius: 16, borderWidth: 1, borderColor: '#1E293B', marginBottom: 28 },
+  opcaoItem: { 
+    flexDirection: 'row', 
     alignItems: 'center', 
-    justifyContent: 'center' 
+    justifyContent: 'space-between', 
+    padding: 16, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#1E293B' 
   },
-  menuTexto: { 
-    fontSize: 11, 
-    marginTop: 4, 
-    color: '#8F9CAE', 
-    fontWeight: '500' 
-  }
+  opcaoLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  opcaoTexto: { color: '#FFFFFF', fontSize: 15 },
+  btnSair: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: '#121824', 
+    paddingVertical: 14, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#EF4444', 
+    gap: 8 
+  },
+  textoBtnSair: { color: '#EF4444', fontWeight: 'bold', fontSize: 15 },
+  bottomBar: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    height: 65, 
+    backgroundColor: '#090C10', 
+    borderTopWidth: 1, 
+    borderTopColor: '#1E293B', 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center' 
+  },
+  tabItem: { alignItems: 'center', justifyContent: 'center' },
+  tabLabel: { color: '#8F9CAE', fontSize: 11, marginTop: 4 },
+  tabActive: { color: '#8B5CF6', fontWeight: 'bold' }
 });

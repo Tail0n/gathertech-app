@@ -1,14 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 
-// ⚠️ SUBSTITUA PELO SEU IPV4 DA REDE LOCAL OBTIDO NO IPCONFIG
-const API_URL = 'http://10.0.0.100:3000/api/login';
+WebBrowser.maybeCompleteAuthSession();
+
+// ⚠️ SUBSTiTUA PELO SEU IPV4 DA REDE LOCAL OBTIDO NO IPCONFIG
+const API_URL_LOGIN = 'http://10.0.0.102:3000/api/login';
+const API_URL_GOOGLE = 'http://10.0.0.102:3000/api/auth/google';
 
 export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSenha }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
+
+  // Configuração da autenticação do Google
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    // Cole aqui os Client IDs gerados no Google Cloud Console
+    androidClientId: 'SEU_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+    iosClientId: 'SEU_IOS_CLIENT_ID.apps.googleusercontent.com',
+    webClientId: 'SEU_WEB_CLIENT_ID.apps.googleusercontent.com',
+  });
+
+  // Escuta a resposta da janela de login do Google
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { accessToken } = response.authentication;
+      autenticarComGoogle(accessToken);
+    }
+  }, [response]);
+
+  // Busca os dados do usuário no Google e envia para a API
+  const autenticarComGoogle = async (accessToken) => {
+    try {
+      setCarregando(true);
+
+      // 1. Obtém dados do perfil da API do Google
+      const resGoogle = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const dadosGoogle = await resGoogle.json();
+
+      if (dadosGoogle.email) {
+        // 2. Envia para o backend Node.js
+        const resposta = await fetch(API_URL_GOOGLE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: dadosGoogle.email,
+            name: dadosGoogle.name,
+            googleId: dadosGoogle.id,
+          }),
+        });
+
+        const dados = await resposta.json();
+
+        if (resposta.ok && dados.usuario) {
+          aoEntrar(dados.usuario);
+        } else {
+          Alert.alert('Falha no Login Social', dados.erro || 'Erro ao autenticar com o Google.');
+        }
+      }
+    } catch (erro) {
+      console.error('Erro no Google Auth:', erro);
+      Alert.alert('Erro de Conexão', 'Não foi possível concluir o login com o Google.');
+    } finally {
+      setCarregando(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -19,7 +79,7 @@ export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSen
     try {
       setCarregando(true);
       
-      const resposta = await fetch(API_URL, {
+      const resposta = await fetch(API_URL_LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase().trim(), senha }),
@@ -28,7 +88,6 @@ export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSen
       const dados = await resposta.json();
 
       if (resposta.ok && dados.usuario) {
-        // Envia o objeto completo do usuário (com o tipo_usuario vindo do banco) para o App.js
         aoEntrar(dados.usuario);
       } else {
         Alert.alert('Falha no Login', dados.erro || 'E-mail ou senha incorretos.');
@@ -107,7 +166,8 @@ export default function TelaLogin({ aoEntrar, irParaCadastro, irParaRecuperarSen
         <View style={styles.socialButtonsContainer}>
           <TouchableOpacity 
             style={styles.btnSocial} 
-            onPress={() => Alert.alert('Google', 'Login via Google em breve!')}
+            onPress={() => promptAsync()}
+            disabled={!request || carregando}
           >
             <Image 
               source={{ uri: 'https://img.icons8.com/color/48/google-logo.png' }} 
